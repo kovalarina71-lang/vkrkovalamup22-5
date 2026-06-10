@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Золотое Яблоко — Прототип продуктовой стратегии</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Manrope:wght@400;500;600;700&display=swap&subset=cyrillic,cyrillic-ext,latin" rel="stylesheet">
+<style>
+/* ============ DESIGN SYSTEM ============ */
+:root{
+  --black:#0A0A0A;
+  --ink:#1A1815;
+  --gold:#C9A96E;
+  --gold-deep:#A9844A;
+  --gold-soft:#E6D4B0;
+  --champagne:#F0E5D0;
+  --white:#FFFFFF;
+  --paper:#FBFAF7;
+  --grey-bg:#F5F4F1;
+  --grey-card:#F4F2EE;
+  --line:rgba(10,10,10,.09);
+  --line-strong:rgba(10,10,10,.16);
+  --muted:#8C857A;
+  --muted-2:#A8A199;
+  --font-d:'Playfair Display',Georgia,serif;
+  --font-u:'Manrope',-apple-system,sans-serif;
+  --green:#5C8A52;
+  --amber:#C7942F;
+  --red:#B7553F;
+  --ease:cubic-bezier(.5,.05,.2,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  font-family:var(--font-u);
+  background:
+    radial-gradient(120% 80% at 50% -10%, #23211d 0%, #141310 45%, #0b0a08 100%);
+  color:var(--ink);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:100vh;
+  overflow:hidden;
+  letter-spacing:-.01em;
+}
+/* faint luxe grain on the stage */
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
+  background:
+    radial-gradient(60% 50% at 85% 12%, rgba(201,169,110,.10), transparent 60%),
+    radial-gradient(50% 40% at 12% 88%, rgba(201,169,110,.06), transparent 60%);
+}
+
+/* ============ PHONE FRAME ============ */
+#stage{position:relative;z-index:1;transform-origin:center center;}
+.phone{
+  position:relative;
+  width:375px;height:812px;
+  background:#0a0a0a;
+  border-radius:54px;
+  padding:13px;
+  box-shadow:
+    0 2px 4px rgba(0,0,0,.4),
+    0 40px 90px -20px rgba(0,0,0,.75),
+    0 0 0 2px #1c1a16,
+    0 0 0 11px #2a2722,
+    0 0 0 12px #3a362e,
+    inset 0 0 2px rgba(255,255,255,.1);
+}
+.phone::before{ /* side button */
+  content:"";position:absolute;right:-3px;top:200px;width:3px;height:74px;border-radius:0 3px 3px 0;background:linear-gradient(#3a362e,#211f1b);
+}
+.phone::after{ /* volume */
+  content:"";position:absolute;left:-3px;top:170px;width:3px;height:104px;border-radius:3px 0 0 3px;background:linear-gradient(#3a362e,#211f1b);
+}
+.viewport{
+  position:relative;
+  width:349px;height:786px;
+  background:var(--white);
+  border-radius:42px;
+  overflow:hidden;
+}
+
+/* ============ SCREENS ============ */
+.screen{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  background:var(--white);
+  opacity:0;visibility:hidden;
+  transform:translateX(100%);
+  transition:transform .46s var(--ease),opacity .4s var(--ease),visibility .46s;
+  z-index:1;
+  will-change:transform,opacity;
+}
+.screen.active{opacity:1;visibility:visible;transform:translateX(0);z-index:2;}
+.screen.exit-left{opacity:0;transform:translateX(-26%);}
+.screen.exit-right{opacity:0;transform:translateX(26%);}
+.screen[data-theme="dark"]{background:var(--black);color:var(--white);}
+
+.scroll{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.scroll::-webkit-scrollbar{display:none;}
+
+/* status bar */
+.statusbar{
+  height:50px;flex:0 0 50px;
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:0 26px 9px;font-size:14px;font-weight:600;letter-spacing:0;
+  position:relative;z-index:5;
+}
+.statusbar .time{font-variant-numeric:tabular-nums;}
+.statusbar .icons{display:flex;align-items:center;gap:6px;}
+.statusbar svg{display:block;}
+.notch{
+  position:absolute;top:9px;left:50%;transform:translateX(-50%);
+  width:120px;height:30px;background:#0a0a0a;border-radius:0 0 18px 18px;z-index:6;
+}
+[data-theme="dark"] .notch{background:#000;}
+
+/* ============ TYPOGRAPHY ============ */
+.kicker{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);}
+[data-theme="dark"] .kicker{color:var(--gold);}
+.display{font-family:var(--font-d);font-weight:500;line-height:1.06;letter-spacing:-.01em;}
+.h1{font-family:var(--font-d);font-size:30px;font-weight:600;line-height:1.08;letter-spacing:-.015em;}
+.h2{font-family:var(--font-d);font-size:23px;font-weight:600;line-height:1.12;}
+.lead{font-size:15px;line-height:1.5;color:var(--muted);font-weight:450;}
+.body{font-size:14px;line-height:1.55;}
+
+/* ============ BUTTONS ============ */
+.btn{
+  font-family:var(--font-u);font-size:15px;font-weight:600;letter-spacing:.01em;
+  border:none;border-radius:16px;cursor:pointer;
+  padding:17px 22px;width:100%;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  transition:transform .14s var(--ease),box-shadow .25s,background .25s,opacity .2s;
+  position:relative;
+}
+.btn:active{transform:scale(.972);}
+.btn-dark{background:var(--black);color:#fff;}
+.btn-dark:active{background:#000;}
+.btn-gold{
+  color:#231d12;
+  background:linear-gradient(135deg,#E6CF9E 0%,#C9A96E 48%,#B08E50 100%);
+  box-shadow:0 8px 24px -8px rgba(201,169,110,.7),inset 0 1px 0 rgba(255,255,255,.45);
+}
+.btn-gold::after{content:"";position:absolute;inset:0;border-radius:16px;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.45) 48%,transparent 66%);background-size:230% 100%;background-position:130% 0;transition:background-position .9s var(--ease);}
+.btn-gold:hover::after{background-position:-130% 0;}
+.btn-ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line-strong);}
+.btn-ghost.on-dark{color:#fff;border-color:rgba(255,255,255,.28);}
+.btn-light{background:#fff;color:var(--black);border:1.5px solid var(--line);}
+.btn-sm{padding:12px 16px;font-size:13.5px;border-radius:13px;width:auto;}
+.btn-row{display:flex;gap:10px;}
+
+/* ============ METRIC CALLOUT ============ */
+.metric{
+  background:linear-gradient(180deg,#FAF6EE,#F6F1E6);
+  border:1px solid rgba(201,169,110,.28);
+  border-left:3px solid var(--gold);
+  border-radius:14px;padding:15px 16px 16px;
+  display:flex;flex-direction:column;gap:7px;
+}
+.metric__label{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-deep);display:flex;align-items:center;gap:7px;}
+.metric__label::before{content:"";width:13px;height:13px;border-radius:50%;border:1.5px solid var(--gold);display:inline-block;background:radial-gradient(circle at 50% 50%,var(--gold) 0 2px,transparent 3px);}
+.metric__value{font-size:15px;line-height:1.42;color:var(--ink);font-weight:500;}
+.metric__value b{font-weight:700;color:var(--gold-deep);font-variant-numeric:tabular-nums;}
+
+/* ============ CHIPS ============ */
+.chips{display:flex;gap:8px;flex-wrap:wrap;}
+.chip{
+  font-size:12.5px;font-weight:600;letter-spacing:.01em;
+  padding:8px 13px;border-radius:100px;border:1px solid var(--line-strong);
+  background:#fff;color:var(--ink);cursor:pointer;white-space:nowrap;
+  transition:all .2s var(--ease);display:flex;align-items:center;gap:6px;
+}
+.chip.active{background:var(--black);color:#fff;border-color:var(--black);}
+.chip svg{width:13px;height:13px;}
+
+/* ============ CARDS ============ */
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;}
+.soft{background:var(--grey-card);border-radius:16px;}
+
+/* placeholder media */
+.ph{position:relative;overflow:hidden;border-radius:14px;background:var(--grey-card);}
+.ph-label{position:absolute;left:10px;bottom:9px;font-size:9.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.82);z-index:3;text-shadow:0 1px 4px rgba(0,0,0,.4);}
+.ph::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.22) 50%,transparent 65%);background-size:280% 100%;animation:sheen 4.5s linear infinite;}
+@keyframes sheen{0%{background-position:140% 0;}100%{background-position:-140% 0;}}
+.ph-gold{background:linear-gradient(140deg,#2a2620 0%,#4a4133 40%,#C9A96E 130%);}
+.ph-dark{background:linear-gradient(150deg,#1c1a16,#34302a 70%,#4a4339);}
+.ph-grey{background:linear-gradient(150deg,#E9E6DF,#D7D2C8 80%,#cfc8bb);}
+.ph-rose{background:linear-gradient(145deg,#3a2622,#7a4a44 60%,#C98A78);}
+
+/* ============ PROFILE BAR ============ */
+.pbar{height:7px;border-radius:100px;background:rgba(10,10,10,.08);overflow:hidden;}
+.pbar>i{display:block;height:100%;border-radius:100px;background:linear-gradient(90deg,#C9A96E,#E6CF9E);width:0;transition:width 1.1s var(--ease);}
+[data-theme="dark"] .pbar{background:rgba(255,255,255,.14);}
+
+/* progress (quiz) */
+.steps{display:flex;gap:5px;}
+.steps>i{flex:1;height:4px;border-radius:4px;background:rgba(10,10,10,.1);overflow:hidden;}
+.steps>i.done{background:var(--gold);}
+.steps>i.cur{background:rgba(10,10,10,.1);}
+.steps>i.cur::after{content:"";display:block;height:100%;width:0;background:var(--gold);animation:fillstep 1s var(--ease) forwards;}
+@keyframes fillstep{to{width:55%;}}
+
+/* ============ BOTTOM NAV ============ */
+.tabbar{
+  flex:0 0 auto;height:74px;
+  display:flex;align-items:flex-start;justify-content:space-around;
+  padding:11px 14px 0;background:rgba(255,255,255,.86);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-top:1px solid var(--line);position:relative;z-index:5;
+}
+.tab{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted-2);cursor:pointer;flex:1;transition:color .2s;padding-top:2px;}
+.tab svg{width:23px;height:23px;}
+.tab span{font-size:9.5px;font-weight:600;letter-spacing:.02em;}
+.tab.active{color:var(--black);}
+.tab.cam{margin-top:-4px;}
+.tab.cam .cambtn{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#E6CF9E,#C9A96E);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px -4px rgba(201,169,110,.7);color:#231d12;margin-bottom:2px;}
+.tab.cam .cambtn svg{width:22px;height:22px;}
+
+/* ============ TOP BAR (back) ============ */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:4px 20px 8px;flex:0 0 auto;position:relative;z-index:5;}
+.iconbtn{
+  width:40px;height:40px;border-radius:50%;border:1px solid var(--line);
+  background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  color:var(--ink);transition:transform .14s var(--ease),background .2s;flex:0 0 auto;
+}
+.iconbtn:active{transform:scale(.9);}
+[data-theme="dark"] .iconbtn{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.16);color:#fff;}
+.topbar .title{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}
+[data-theme="dark"] .topbar .title{color:var(--gold-soft);}
+
+/* floating home */
+.fab-home{
+  position:absolute;right:16px;bottom:22px;z-index:30;
+  width:50px;height:50px;border-radius:50%;
+  background:rgba(10,10,10,.9);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.14);
+  display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;
+  box-shadow:0 10px 26px -8px rgba(0,0,0,.5);
+  transition:transform .16s var(--ease);
+  opacity:0;transform:scale(.6) translateY(8px);pointer-events:none;
+}
+.screen.active .fab-home{opacity:1;transform:scale(1) translateY(0);pointer-events:auto;transition:transform .35s var(--ease) .15s,opacity .3s .15s;}
+.fab-home:active{transform:scale(.9)!important;}
+
+/* ============ BOTTOM SHEET ============ */
+.sheet-wrap{position:absolute;inset:0;z-index:40;display:none;}
+.sheet-wrap.open{display:block;}
+.sheet-scrim{position:absolute;inset:0;background:rgba(10,10,10,.5);opacity:0;transition:opacity .35s var(--ease);backdrop-filter:blur(2px);}
+.sheet-wrap.open .sheet-scrim{opacity:1;}
+.sheet{
+  position:absolute;left:0;right:0;bottom:0;
+  background:#fff;border-radius:26px 26px 0 0;padding:10px 20px 24px;
+  transform:translateY(100%);transition:transform .42s var(--ease);
+  max-height:88%;overflow-y:auto;scrollbar-width:none;
+  box-shadow:0 -10px 40px rgba(0,0,0,.18);
+}
+.sheet::-webkit-scrollbar{display:none;}
+.sheet-wrap.open .sheet{transform:translateY(0);}
+.grab{width:38px;height:4px;border-radius:4px;background:var(--line-strong);margin:4px auto 14px;}
+
+/* helpers */
+.pad{padding:0 22px;}
+.center{text-align:center;}
+.row{display:flex;align-items:center;}
+.between{justify-content:space-between;}
+.gap8{gap:8px;}.gap10{gap:10px;}.gap12{gap:12px;}.gap14{gap:14px;}
+.mt6{margin-top:6px;}.mt8{margin-top:8px;}.mt10{margin-top:10px;}.mt12{margin-top:12px;}.mt14{margin-top:14px;}.mt16{margin-top:16px;}.mt18{margin-top:18px;}.mt20{margin-top:20px;}.mt22{margin-top:22px;}.mt24{margin-top:24px;}.mt28{margin-top:28px;}.mt32{margin-top:32px;}
+.mb4{margin-bottom:4px;}.mb6{margin-bottom:6px;}.mb8{margin-bottom:8px;}.mb10{margin-bottom:10px;}.mb12{margin-bottom:12px;}
+.gold{color:var(--gold-deep);}
+.price{font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+.strike{color:var(--muted-2);text-decoration:line-through;font-weight:500;}
+.badge{font-size:10.5px;font-weight:700;letter-spacing:.04em;padding:4px 9px;border-radius:7px;background:var(--black);color:var(--gold);display:inline-flex;align-items:center;gap:4px;white-space:nowrap;}
+.badge.green{background:rgba(92,138,82,.12);color:var(--green);}
+.divider{height:1px;background:var(--line);margin:16px 0;}
+
+/* swatches */
+.swatch{width:24px;height:24px;border-radius:50%;border:1px solid rgba(0,0,0,.12);box-shadow:inset 0 1px 2px rgba(255,255,255,.4);}
+
+/* entrance for content */
+.rise{opacity:0;transform:translateY(14px);}
+.screen.active .rise{animation:rise .6s var(--ease) forwards;}
+@keyframes rise{to{opacity:1;transform:none;}}
+.screen.active .d1{animation-delay:.05s;}
+.screen.active .d2{animation-delay:.12s;}
+.screen.active .d3{animation-delay:.19s;}
+.screen.active .d4{animation-delay:.26s;}
+.screen.active .d5{animation-delay:.33s;}
+.screen.active .d6{animation-delay:.4s;}
+@media (prefers-reduced-motion:reduce){
+  .rise{opacity:1;transform:none;animation:none!important;}
+  .ph::after{animation:none;}
+}
+@keyframes qin{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+.qin{animation:qin .4s var(--ease);}
+
+/* hint pill under phone */
+.hint{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:5;color:rgba(255,255,255,.4);font-size:11px;letter-spacing:.04em;font-weight:500;display:flex;gap:14px;align-items:center;}
+.hint b{color:var(--gold-soft);font-weight:600;}
+@media (max-height:700px){.hint{display:none;}}
+
+/* ===== logo emblem ===== */
+.emblem{width:94px;height:94px;border-radius:50%;border:1px solid rgba(201,169,110,.5);display:flex;align-items:center;justify-content:center;position:relative;}
+.emblem::before{content:"";position:absolute;inset:8px;border-radius:50%;border:1px solid rgba(201,169,110,.2);}
+.apple{width:32px;height:33px;position:relative;}
+.apple .body{position:absolute;bottom:0;left:1px;width:30px;height:28px;background:linear-gradient(135deg,#E6CF9E,#C9A96E 60%,#A9844A);border-radius:48% 48% 46% 46%/56% 56% 44% 44%;box-shadow:inset -3px -4px 7px rgba(80,55,20,.35),inset 3px 2px 5px rgba(255,255,255,.4);}
+.apple .body::after{content:"";position:absolute;top:7px;left:13px;width:6px;height:7px;border-radius:50%;background:rgba(0,0,0,.07);}
+.apple .leaf{position:absolute;top:-1px;right:4px;width:13px;height:9px;background:linear-gradient(135deg,#E6CF9E,#C9A96E);border-radius:0 100% 0 100%;transform:rotate(-15deg);}
+.apple .stem{position:absolute;top:-3px;left:15px;width:2px;height:8px;background:var(--gold-deep);border-radius:2px;transform:rotate(10deg);}
+
+/* ===== carousel ===== */
+.carousel{flex:1;overflow:hidden;}
+.ctrack{display:flex;height:100%;transition:transform .5s var(--ease);}
+.cslide{min-width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 36px 0;text-align:center;}
+.cicon{width:120px;height:120px;border-radius:30px;display:flex;align-items:center;justify-content:center;margin-bottom:32px;color:#231d12;position:relative;box-shadow:0 16px 40px -14px rgba(201,169,110,.6);}
+.cicon svg{width:52px;height:52px;}
+.dots{display:flex;gap:7px;justify-content:center;}
+.dots>i{width:7px;height:7px;border-radius:50%;background:var(--line-strong);transition:all .35s var(--ease);}
+.dots>i.on{width:24px;border-radius:4px;background:var(--gold);}
+
+/* ===== hub feature grid ===== */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fcard{background:var(--grey-card);border:1px solid var(--line);border-radius:18px;padding:15px 15px 14px;display:flex;flex-direction:column;cursor:pointer;position:relative;overflow:hidden;transition:transform .16s var(--ease),box-shadow .25s;min-height:142px;}
+.fcard:active{transform:scale(.97);}
+.fcard .fic{width:42px;height:42px;border-radius:13px;background:#fff;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink);margin-bottom:auto;}
+.fcard .fic svg{width:22px;height:22px;}
+.fcard h4{font-size:15px;font-weight:700;margin-top:16px;letter-spacing:-.015em;}
+.fcard p{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.32;}
+.fcard .arr{position:absolute;right:13px;bottom:13px;color:var(--gold-deep);}
+.fcard.dark{background:linear-gradient(150deg,#15130f,#241f17);border-color:rgba(201,169,110,.25);color:#fff;}
+.fcard.dark .fic{background:rgba(201,169,110,.14);border-color:rgba(201,169,110,.25);color:var(--gold);}
+.fcard.dark p{color:rgba(255,255,255,.62);}
+.fcard.dark .arr{color:var(--gold);}
+
+/* ===== AR stage ===== */
+.arstage{position:relative;flex:1;background:radial-gradient(115% 85% at 50% 32%,#2a251d,#0b0a08);overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.facehint{position:absolute;top:14px;left:0;right:0;text-align:center;font-size:11.5px;color:rgba(255,255,255,.5);letter-spacing:.05em;animation:pulse 2.6s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:.4;}50%{opacity:.85;}}
+.ar-tools{position:relative;z-index:5;background:linear-gradient(180deg,rgba(10,10,10,0),rgba(10,10,10,.55) 30%,#0a0a08);padding:14px 18px 18px;}
+.shades{display:flex;gap:15px;justify-content:center;padding:6px 0 14px;}
+.shade{width:38px;height:38px;border-radius:50%;cursor:pointer;position:relative;transition:transform .18s var(--ease);box-shadow:inset 0 2px 4px rgba(255,255,255,.35),inset 0 -2px 5px rgba(0,0,0,.3);}
+.shade.on{transform:scale(1.14);}
+.shade.on::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1.5px solid var(--gold);}
+.shade .nm{position:absolute;top:46px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,.4);white-space:nowrap;opacity:0;transition:.2s;}
+.shade.on .nm{opacity:1;color:var(--gold-soft);}
+
+/* ===== scanner viewfinder ===== */
+.viewfinder{position:relative;width:228px;height:296px;margin:0 auto;border-radius:20px;overflow:hidden;background:linear-gradient(160deg,#1a1713,#0b0a08);}
+.vf-corner{position:absolute;width:30px;height:30px;border:2.5px solid var(--gold);}
+.vf-corner.tl{top:14px;left:14px;border-right:none;border-bottom:none;border-radius:7px 0 0 0;}
+.vf-corner.tr{top:14px;right:14px;border-left:none;border-bottom:none;border-radius:0 7px 0 0;}
+.vf-corner.bl{bottom:14px;left:14px;border-right:none;border-top:none;border-radius:0 0 0 7px;}
+.vf-corner.br{bottom:14px;right:14px;border-left:none;border-top:none;border-radius:0 0 7px 0;}
+.scanline{position:absolute;left:18px;right:18px;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);box-shadow:0 0 14px 1px rgba(201,169,110,.8);animation:scan 2.6s ease-in-out infinite;}
+@keyframes scan{0%,100%{top:26px;}50%{top:264px;}}
+.label-mock{position:absolute;inset:40px 34px;border-radius:8px;background:repeating-linear-gradient(0deg,rgba(255,255,255,.07) 0 2px,transparent 2px 11px);opacity:.5;}
+
+/* ===== score ring ===== */
+.scorewrap{position:relative;width:154px;height:154px;margin:0 auto;}
+.scorewrap svg{transform:rotate(-90deg);display:block;}
+.score-num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.score-num b{font-family:var(--font-d);font-size:42px;font-weight:600;line-height:1;color:var(--ink);}
+.score-num b span{font-size:20px;color:var(--muted-2);}
+.score-num em{font-style:normal;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:5px;}
+
+/* ===== ingredient rows ===== */
+.ing{display:flex;align-items:center;gap:13px;padding:14px 0;border-bottom:1px solid var(--line);}
+.ing:last-child{border-bottom:none;}
+.ing .idot{width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-weight:700;}
+.ing.g .idot{background:rgba(92,138,82,.14);color:var(--green);}
+.ing.y .idot{background:rgba(199,148,47,.16);color:var(--amber);}
+.ing.r .idot{background:rgba(183,85,63,.14);color:var(--red);}
+.ing h5{font-size:14px;font-weight:600;}
+.ing p{font-size:11.5px;color:var(--muted);margin-top:1px;}
+
+/* ===== ugc video strip ===== */
+.vstrip{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;}
+.vstrip::-webkit-scrollbar{display:none;}
+.vthumb{position:relative;min-width:106px;height:152px;border-radius:15px;overflow:hidden;flex:0 0 auto;cursor:pointer;}
+.vthumb .play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+.vthumb .play i{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;color:#1a1a1a;box-shadow:0 4px 12px rgba(0,0,0,.25);}
+.vthumb .vm{position:absolute;left:8px;bottom:7px;font-size:10px;font-weight:600;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6);z-index:3;}
+
+/* product rows / alt cards */
+.prow{display:flex;align-items:center;gap:13px;padding:11px 0;border-bottom:1px solid var(--line);}
+.prow:last-of-type{border-bottom:none;}
+.prow .pimg{width:58px;height:58px;border-radius:12px;flex:0 0 auto;}
+.prow h5{font-size:13.5px;font-weight:600;letter-spacing:-.01em;}
+.prow p{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.prow .pp{margin-left:auto;text-align:right;font-size:13.5px;}
+.altcard{display:flex;gap:13px;align-items:center;padding:11px;border:1px solid var(--line);border-radius:16px;background:#fff;}
+.altcard .aimg{width:66px;height:66px;border-radius:12px;flex:0 0 auto;}
+.scoremini{font-size:11px;font-weight:700;padding:3px 8px;border-radius:7px;background:rgba(92,138,82,.14);color:var(--green);display:inline-flex;align-items:center;gap:4px;}
+
+/* quiz tiles */
+.tiles{display:flex;flex-direction:column;gap:12px;}
+.tile{display:flex;align-items:center;gap:15px;padding:15px;border:1.5px solid var(--line);border-radius:16px;cursor:pointer;transition:all .2s var(--ease);background:#fff;}
+.tile:active{transform:scale(.985);}
+.tile.on{border-color:var(--black);background:var(--paper);box-shadow:0 6px 20px -10px rgba(0,0,0,.2);}
+.tile .tsw{width:46px;height:46px;border-radius:13px;flex:0 0 auto;box-shadow:inset 0 2px 5px rgba(255,255,255,.4),inset 0 -2px 6px rgba(0,0,0,.12);}
+.tile h5{font-size:15px;font-weight:600;line-height:1.2;}
+.tile p{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.3;}
+.tile>div:nth-child(2){flex:1;min-width:0;}
+.tile .tck{margin-left:auto;width:24px;height:24px;border-radius:50%;border:1.5px solid var(--line-strong);display:flex;align-items:center;justify-content:center;color:#fff;transition:.2s;flex:0 0 auto;}
+.tile.on .tck{background:var(--black);border-color:var(--black);}
+
+/* palette strip */
+.palette{display:flex;border-radius:14px;overflow:hidden;height:60px;box-shadow:0 6px 20px -10px rgba(0,0,0,.25);}
+.palette>i{flex:1;}
+
+/* small avatar */
+.ava{width:40px;height:40px;border-radius:50%;background:linear-gradient(140deg,#C9A96E,#7a5a32);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;font-family:var(--font-d);}
+
+/* check burst */
+.checkmark{width:78px;height:78px;border-radius:50%;background:linear-gradient(135deg,#E6CF9E,#C9A96E);display:flex;align-items:center;justify-content:center;margin:0 auto;color:#231d12;position:relative;}
+.checkmark::after{content:"";position:absolute;inset:-10px;border-radius:50%;border:1px solid rgba(201,169,110,.4);animation:halo 1.6s var(--ease) infinite;}
+@keyframes halo{0%{transform:scale(.85);opacity:.8;}100%{transform:scale(1.25);opacity:0;}}
+.checkmark svg{width:38px;height:38px;}
+
+.sticky-cta{position:sticky;bottom:0;background:linear-gradient(180deg,rgba(255,255,255,0),#fff 24%);padding:14px 22px 18px;margin-top:8px;}
+[data-theme="dark"] .sticky-cta{background:linear-gradient(180deg,rgba(10,10,10,0),#0a0a0a 24%);}
+
+/* robust action footer (replaces fragile position:sticky) */
+.actionbar{flex:0 0 auto;background:#fff;border-top:1px solid var(--line);padding:13px 22px 18px;}
+[data-theme="dark"] .actionbar{background:#0a0a0a;border-top-color:rgba(255,255,255,.08);}
+.screen:has(.actionbar) .fab-home{bottom:86px;}
+.screen:has(.ar-tools) .fab-home{bottom:174px;}
+.screen:has(.actionbar) .scroll{padding-bottom:12px;}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="phone">
+    <div class="viewport" id="viewport">
+
+      <!-- ============ 0a SPLASH ============ -->
+      <section class="screen active" id="s-splash" data-theme="dark" data-label="Сплэш">
+        <div class="scroll" style="display:flex;flex-direction:column;">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 36px;">
+            <div class="emblem rise d1"><div class="apple"><span class="leaf"></span><span class="stem"></span><span class="body"></span></div></div>
+            <div class="kicker rise d2" style="margin-top:30px;color:var(--gold-soft);">Premium Beauty · Россия</div>
+            <h1 class="display rise d3" style="font-size:38px;margin-top:16px;text-align:center;letter-spacing:.01em;">Золотое<br>Яблоко</h1>
+            <p class="rise d4" style="font-family:var(--font-d);font-style:italic;font-size:17px;color:var(--gold-soft);margin-top:18px;text-align:center;opacity:.92;">«Красота, которая знает тебя»</p>
+          </div>
+          <div style="padding:0 28px 36px;">
+            <button class="btn btn-gold rise d5" onclick="go('s-carousel')">Начать</button>
+            <p class="rise d6 center" style="font-size:11.5px;color:rgba(255,255,255,.4);margin-top:16px;">Прототип цифровой продуктовой стратегии</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 0b CAROUSEL ============ -->
+      <section class="screen" id="s-carousel" data-label="Онбординг">
+        <div class="topbar"><div style="width:40px;"></div><div class="title">Знакомство</div><button class="iconbtn" onclick="go('s-cta')" title="Пропустить" style="width:auto;padding:0 14px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--muted);">Пропустить</button></div>
+        <div class="carousel">
+          <div class="ctrack" id="ctrack">
+            <div class="cslide">
+              <div class="cicon" style="background:linear-gradient(140deg,#E6CF9E,#C9A96E);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8a7 7 0 0 0 14 0"/><ellipse cx="12" cy="13.5" rx="7" ry="6.5"/><path d="M9 13.5c1 1.4 5 1.4 6 0"/><path d="M18.5 4.5l.7 1.6 1.6.7-1.6.7-.7 1.6-.7-1.6-1.6-.7 1.6-.7z"/></svg>
+              </div>
+              <div class="kicker gold">Гипотеза 1</div>
+              <h2 class="h2" style="margin-top:10px;">AR-примерка<br>оттенков</h2>
+              <p class="lead" style="margin-top:14px;">Примерьте помаду или тон прямо на себе — через камеру, в реальном времени, прежде чем добавить в корзину.</p>
+            </div>
+            <div class="cslide">
+              <div class="cicon" style="background:linear-gradient(140deg,#D8C39A,#B89A63);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="9" cy="9" r="1.3" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1.3" fill="currentColor" stroke="none"/><circle cx="9" cy="15" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.2" cy="14.4" r="2" fill="currentColor" stroke="none"/></svg>
+              </div>
+              <div class="kicker gold">Гипотезы 3 и 4</div>
+              <h2 class="h2" style="margin-top:10px;">Ваш цветотип<br>и состав</h2>
+              <p class="lead" style="margin-top:14px;">Пройдите тест цветотипирования за 2 минуты и сканируйте составы по фото — каталог подстроится под вас.</p>
+            </div>
+            <div class="cslide">
+              <div class="cicon" style="background:linear-gradient(140deg,#E6CF9E,#C9A96E);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M10 9.2v5.6l5-2.8z" fill="currentColor" stroke="none"/></svg>
+              </div>
+              <div class="kicker gold">Гипотеза 2</div>
+              <h2 class="h2" style="margin-top:10px;">Реальные образы<br>реальных людей</h2>
+              <p class="lead" style="margin-top:14px;">UGC-видео от покупателей с вашим типом кожи и функция Shop the Look — соберите весь образ в один клик.</p>
+            </div>
+          </div>
+        </div>
+        <div style="padding:18px 28px 30px;">
+          <div class="dots mb12" id="cdots"><i class="on"></i><i></i><i></i></div>
+          <button class="btn btn-dark mt14" id="cnext" onclick="carouselNext()">Далее</button>
+        </div>
+      </section>
+
+      <!-- ============ 0c CTA ============ -->
+      <section class="screen" id="s-cta" data-theme="dark" data-label="Точка входа">
+        <div class="scroll" style="display:flex;flex-direction:column;">
+          <div style="position:relative;height:300px;flex:0 0 auto;overflow:hidden;">
+            <div class="ph ph-rose" style="position:absolute;inset:0;border-radius:0;"><span class="ph-label">Образ · персональная палитра</span></div>
+            <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,10,.1),rgba(10,10,10,.95));"></div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:0 28px 34px;margin-top:-70px;position:relative;z-index:2;">
+            <div class="kicker rise d1">Персонализация</div>
+            <h1 class="h1 rise d2" style="margin-top:14px;">Узнайте<br>свой типаж</h1>
+            <p class="lead rise d3" style="color:rgba(255,255,255,.66);margin-top:14px;">Определим ваш цветотип и настроим каталог из 5 000+ оттенков под вас. Это займёт две минуты.</p>
+            <button class="btn btn-gold rise d4" style="margin-top:26px;" onclick="go('s-ct1')">Узнать свой типаж</button>
+            <button class="btn btn-ghost on-dark rise d5" style="margin-top:11px;" onclick="go('s-hub')">Перейти в приложение</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ HUB ============ -->
+      <section class="screen" id="s-hub" data-label="Хаб">
+        <div class="scroll">
+          <div style="padding:6px 22px 0;" class="row between">
+            <div class="row gap8">
+              <div style="width:30px;height:30px;border-radius:50%;border:1px solid rgba(201,169,110,.6);display:flex;align-items:center;justify-content:center;"><div class="apple" style="width:17px;height:18px;transform:scale(.85);"><span class="leaf"></span><span class="stem"></span><span class="body"></span></div></div>
+              <span style="font-family:var(--font-d);font-weight:600;font-size:15px;letter-spacing:.04em;">Золотое Яблоко</span>
+            </div>
+            <div class="ava">А</div>
+          </div>
+
+          <div class="pad" style="margin-top:22px;">
+            <div class="kicker rise d1">Главная</div>
+            <h1 class="h1 rise d1" style="margin-top:8px;">Привет, Анна <span style="font-family:var(--font-u)">👋</span></h1>
+          </div>
+
+          <div class="pad rise d2" style="margin-top:20px;">
+            <div class="card" style="padding:16px;">
+              <div class="row between mb10">
+                <div>
+                  <div style="font-size:13.5px;font-weight:600;">Ваш профиль</div>
+                  <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">CDP · единый профиль клиента</div>
+                </div>
+                <div style="font-family:var(--font-d);font-size:24px;font-weight:600;" class="gold">65%</div>
+              </div>
+              <div class="pbar"><i data-fill="65"></i></div>
+              <div class="row gap8" style="margin-top:12px;color:var(--muted);font-size:11.5px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg>
+                <span>Добавьте цветотип и аллергены, чтобы открыть точные рекомендации</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pad rise d3" style="margin-top:24px;">
+            <div class="kicker mb12">Персональные инструменты</div>
+            <div class="fgrid">
+              <div class="fcard dark" onclick="go('s-ar1')">
+                <div class="fic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8a7 7 0 0 0 14 0"/><ellipse cx="12" cy="13.5" rx="7" ry="6.5"/><path d="M9 13.5c1 1.4 5 1.4 6 0"/><path d="M18.5 5l.6 1.4L20.5 7l-1.4.6L18.5 9l-.6-1.4L16.5 7l1.4-.6z"/></svg></div>
+                <h4>AR-примерка</h4>
+                <p>Оттенки на вашем лице</p>
+                <span class="arr"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M12 6l6 6-6 6"/></svg></span>
+              </div>
+              <div class="fcard" onclick="go('s-ugc1')">
+                <div class="fic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><path d="M10 9.2v5.6l5-2.8z" fill="currentColor" stroke="none"/></svg></div>
+                <h4>UGC-видео</h4>
+                <p>Реальные образы · Shop the Look</p>
+                <span class="arr"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M12 6l6 6-6 6"/></svg></span>
+              </div>
+              <div class="fcard" onclick="go('s-ct1')">
+                <div class="fic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="9" cy="9" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1.2" fill="currentColor" stroke="none"/><circle cx="9" cy="15" r="1.2" fill="currentColor" stroke="none"/><circle cx="15.2" cy="14.4" r="1.9" fill="currentColor" stroke="none"/></svg></div>
+                <h4>Цветотип</h4>
+                <p>Тест за 2 минуты</p>
+                <span class="arr"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M12 6l6 6-6 6"/></svg></span>
+              </div>
+              <div class="fcard" onclick="go('s-sc1')">
+                <div class="fic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V6a2 2 0 0 1 2-2h2"/><path d="M20 8V6a2 2 0 0 0-2-2h-2"/><path d="M4 16v2a2 2 0 0 0 2 2h2"/><path d="M20 16v2a2 2 0 0 1-2 2h-2"/><path d="M4 12h16"/></svg></div>
+                <h4>Сканер состава</h4>
+                <p>INCI по фото</p>
+                <span class="arr"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M12 6l6 6-6 6"/></svg></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pad rise d4" style="margin-top:20px;">
+            <div class="metric">
+              <div class="metric__label">North Star</div>
+              <div class="metric__value">Orders per Active User <b>4,1 → 5,0</b> к Q4 2027</div>
+            </div>
+          </div>
+          <div style="height:18px;"></div>
+        </div>
+        <nav class="tabbar">
+          <div class="tab active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/></svg><span>Главная</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>Поиск</span></div>
+          <div class="tab cam" onclick="go('s-sc1')"><div class="cambtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h2.5l1.2-1.8h6.6L16.5 8H19a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z"/><circle cx="12" cy="13" r="3.3"/></svg></div><span>Сканер</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.6-9.2-9C1.3 8 3 4.8 6.2 4.8c2 0 3.2 1.2 3.8 2.2.6-1 1.8-2.2 3.8-2.2 3.2 0 4.9 3.2 3.4 6.2C19 15.4 12 20 12 20z"/></svg><span>Избранное</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M5 20c.6-3.6 3.4-5.5 7-5.5s6.4 1.9 7 5.5"/></svg><span>Профиль</span></div>
+        </nav>
+      </section>
+
+      <!-- ============ 1a AR PRODUCT CARD ============ -->
+      <section class="screen" id="s-ar1" data-home data-label="AR · карточка">
+        <div class="topbar"><button class="iconbtn" onclick="back()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="title">Каталог</div><button class="iconbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.6-9.2-9C1.3 8 3 4.8 6.2 4.8c2 0 3.2 1.2 3.8 2.2.6-1 1.8-2.2 3.8-2.2 3.2 0 4.9 3.2 3.4 6.2C19 15.4 12 20 12 20z"/></svg></button></div>
+        <div class="scroll">
+          <div class="pad">
+            <div class="ph ph-rose rise d1" style="height:280px;">
+              <span class="badge" style="position:absolute;top:12px;left:12px;z-index:3;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8a7 7 0 0 0 14 0"/></svg> AR</span>
+              <span class="ph-label">Помада · крупный план</span>
+            </div>
+          </div>
+          <div class="pad" style="margin-top:18px;">
+            <div class="kicker rise d2">Velvet Matte · Декоративная косметика</div>
+            <h2 class="h2 rise d2" style="margin-top:8px;">Матовая помада<br>«Терракота 24»</h2>
+            <div class="row gap10 rise d3" style="margin-top:12px;align-items:baseline;">
+              <span class="price" style="font-size:24px;">2 490 ₽</span>
+              <span class="strike">2 990 ₽</span>
+              <span class="badge green" style="margin-left:auto;">★ 4.8 · 1 240 отзывов</span>
+            </div>
+
+            <div class="rise d4" style="margin-top:22px;">
+              <div class="row between mb10"><span class="kicker">Оттенок</span><span style="font-size:12.5px;font-weight:600;" class="gold" id="ar1shadeName">Терракота</span></div>
+              <div class="row gap12" id="ar1shades">
+                <div class="swatch" style="width:34px;height:34px;background:#C16A4E;outline:2px solid var(--gold);outline-offset:2px;"></div>
+                <div class="swatch" style="width:34px;height:34px;background:#9B4A3A;"></div>
+                <div class="swatch" style="width:34px;height:34px;background:#7E2D2D;"></div>
+                <div class="swatch" style="width:34px;height:34px;background:#C24B63;"></div>
+                <div class="swatch" style="width:34px;height:34px;background:#A8536B;"></div>
+              </div>
+            </div>
+
+            <p class="body rise d5" style="margin-top:22px;color:var(--muted);">Невесомая матовая текстура с насыщенным пигментом и уходовой основой. Держится до 8 часов без сухости.</p>
+
+            <div class="metric rise d6" style="margin-top:20px;">
+              <div class="metric__label">Цифровой примерочный контур</div>
+              <div class="metric__value">Примерка снижает неуверенность на этапе consideration — главную боль в декоративной косметике.</div>
+            </div>
+          </div>
+        </div>
+        <footer class="actionbar">
+          <div class="btn-row">
+            <button class="btn btn-gold" style="flex:2;" onclick="go('s-ar2')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8a7 7 0 0 0 14 0"/><ellipse cx="12" cy="13.5" rx="7" ry="6.5"/></svg> Примерить AR</button>
+            <button class="btn btn-ghost" style="flex:1;">В корзину</button>
+          </div>
+        </footer>
+      </section>
+
+      <!-- ============ 1b AR CAMERA ============ -->
+      <section class="screen" id="s-ar2" data-theme="dark" data-home data-label="AR · камера">
+        <div class="topbar"><button class="iconbtn" onclick="back()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="title">AR-примерка</div><button class="iconbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h4a2 2 0 0 1 2 2v4M20 14v4a2 2 0 0 1-2 2h-4M10 20H6a2 2 0 0 1-2-2v-4M4 10V6a2 2 0 0 1 2-2h4"/></svg></button></div>
+        <div class="arstage">
+          <div class="facehint">Наведите камеру на лицо</div>
+          <svg width="240" height="320" viewBox="0 0 240 320" fill="none">
+            <ellipse cx="120" cy="150" rx="84" ry="108" stroke="rgba(201,169,110,.45)" stroke-width="1.5" stroke-dasharray="5 7"/>
+            <circle cx="92" cy="128" r="2" fill="rgba(201,169,110,.7)"/><circle cx="148" cy="128" r="2" fill="rgba(201,169,110,.7)"/>
+            <circle cx="120" cy="158" r="2" fill="rgba(201,169,110,.7)"/>
+            <circle cx="84" cy="100" r="1.5" fill="rgba(255,255,255,.35)"/><circle cx="156" cy="100" r="1.5" fill="rgba(255,255,255,.35)"/>
+            <circle cx="96" cy="186" r="1.5" fill="rgba(255,255,255,.35)"/><circle cx="144" cy="186" r="1.5" fill="rgba(255,255,255,.35)"/>
+            <!-- eyes -->
+            <path d="M78 124c5-5 18-5 23 0" stroke="rgba(255,255,255,.25)" stroke-width="1.4" stroke-linecap="round"/>
+            <path d="M139 124c5-5 18-5 23 0" stroke="rgba(255,255,255,.25)" stroke-width="1.4" stroke-linecap="round"/>
+            <!-- lips -->
+            <path id="lipPath" d="M96 190c8-6 16-6 24-6s16 0 24 6c-6 9-15 13-24 13s-18-4-24-13z" fill="#C16A4E" fill-opacity="0.82"/>
+            <path d="M96 190c12 5 36 5 48 0" stroke="rgba(0,0,0,.25)" stroke-width="1" fill="none"/>
+          </svg>
+          <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);" class="badge"><span style="width:6px;height:6px;border-radius:50%;background:#5fd07a;display:inline-block;"></span> 468 точек · 30 fps</div>
+        </div>
+        <div class="ar-tools">
+          <div class="center" style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:4px;">Свайп по оттенкам</div>
+          <div class="shades" id="arShades">
+            <div class="shade on" style="background:#C16A4E;" data-c="#C16A4E" data-n="Терракота" onclick="selectShade(this)"><span class="nm">Терракота</span></div>
+            <div class="shade" style="background:#9B4A3A;" data-c="#9B4A3A" data-n="Корица" onclick="selectShade(this)"><span class="nm">Корица</span></div>
+            <div class="shade" style="background:#7E2D2D;" data-c="#7E2D2D" data-n="Марсала" onclick="selectShade(this)"><span class="nm">Марсала</span></div>
+            <div class="shade" style="background:#C24B63;" data-c="#C24B63" data-n="Малина" onclick="selectShade(this)"><span class="nm">Малина</span></div>
+            <div class="shade" style="background:#A8536B;" data-c="#A8536B" data-n="Слива" onclick="selectShade(this)"><span class="nm">Слива</span></div>
+          </div>
+          <div class="btn-row" style="margin-top:14px;">
+            <button class="btn btn-ghost on-dark" style="flex:1;" onclick="go('s-ar3')">Сохранить образ</button>
+            <button class="btn btn-gold" style="flex:1;" onclick="go('s-ar3')">Купить · 2 490 ₽</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 1c AR SAVED ============ -->
+      <section class="screen" id="s-ar3" data-home data-label="AR · сохранено">
+        <div class="topbar"><button class="iconbtn" onclick="back()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="title">AR-гардероб</div><div style="width:40px;"></div></div>
+        <div class="scroll">
+          <div class="pad center" style="margin-top:18px;">
+            <div class="checkmark rise d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div>
+            <h2 class="h2 rise d2" style="margin-top:22px;">Образ сохранён<br>в AR-гардероб</h2>
+            <p class="lead rise d2" style="margin-top:12px;">«Матовая помада · Терракота 24» добавлена в ваш личный кабинет.</p>
+          </div>
+          <div class="pad rise d3" style="margin-top:24px;">
+            <div class="card row gap14" style="padding:13px;align-items:center;">
+              <div class="ph ph-rose" style="width:64px;height:64px;flex:0 0 auto;"></div>
+              <div style="flex:1;">
+                <div style="font-size:14px;font-weight:600;">Терракота 24</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:2px;">Образ №1 · сегодня</div>
+              </div>
+              <button class="iconbtn"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg></button>
+            </div>
+          </div>
+          <div class="pad rise d4" style="margin-top:18px;">
+            <div class="metric">
+              <div class="metric__label">Ожидаемый эффект</div>
+              <div class="metric__value">↑ Конверсия карточки <b>+15%</b> · Возвраты <b>−22%</b></div>
+            </div>
+          </div>
+        </div>
+        <footer class="actionbar">
+          <button class="btn btn-dark" onclick="go('s-hub')">Вернуться в каталог</button>
+        </footer>
+      </section>
+
+      <!-- ============ 2a UGC PRODUCT ============ -->
+      <section class="screen" id="s-ugc1" data-home data-label="UGC · карточка">
+        <div class="topbar"><button class="iconbtn" onclick="back()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="title">Товар</div><button class="iconbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg></button></div>
+        <div class="scroll">
+          <div class="pad">
+            <div class="ph ph-grey rise d1" style="height:230px;"><span class="ph-label">Сыворотка · флакон</span></div>
+          </div>
+          <div class="pad" style="margin-top:16px;">
+            <div class="kicker rise d2">Уход · Сыворотка для лица</div>
+            <h2 class="h2 rise d2" style="margin-top:8px;">Glow Serum<br>Vitamin C 15%</h2>
+            <div class="row gap10 rise d3" style="margin-top:10px;align-items:baseline;"><span class="price" style="font-size:22px;">3 190 ₽</span><span class="badge green" style="margin-left:auto;">★ 4.9 · 86 видео</span></div>
+
+            <div class="rise d3" style="margin-top:24px;">
+              <div class="row between mb12"><span class="kicker">Видеоотзывы покупателей</span><span style="font-size:11.5px;color:var(--muted);">86</span></div>
+              <div class="chips mb14" id="ugcFilters">
+                <div class="chip active" onclick="toggleChip(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14"/></svg>Все</div>
+                <div class="chip" onclick="toggleChip(this)">Тип кожи</div>
+                <div class="chip" onclick="toggleChip(this)">Возраст</div>
+                <div class="chip" onclick="toggleChip(this)">Подтон</div>
+              </div>
+              <div class="vstrip">
+                <div class="vthumb" onclick="openSheet()"><div class="ph ph-rose" style="position:absolute;inset:0;border-radius:0;"></div><div class="play"><i><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></i></div><span class="vm">Мария · сухая кожа</span></div>
+                <div class="vthumb" onclick="openSheet()"><div class="ph ph-grey" style="position:absolute;inset:0;border-radius:0;"></div><div class="play"><i><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></i></div><span class="vm">Олеся · 32 года</span></div>
+                <div class="vthumb" onclick="openSheet()"><div class="ph ph-gold" style="position:absolute;inset:0;border-radius:0;"></div><div class="play"><i><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></i></div><span class="vm">Дина · тёплый подтон</span></div>
+              </div>
+            </div>
+
+            <div class="metric rise d4" style="margin-top:22px;">
+              <div class="metric__label">Петля социальной валидации</div>
+              <div class="metric__value">Видео от людей с похожим профилем снимают недоверие к стоковым фото.</div>
+            </div>
+          </div>
+        </div>
+        <footer class="actionbar">
+          <button class="btn btn-dark" onclick="openSheet()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6L5 3H3"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/></svg> Shop the Look</button>
+        </footer>
+
+        <!-- 2b Shop the Look sheet -->
+        <div class="sheet-wrap" id="shopSheet">
+          <div class="sheet-scrim" onclick="closeSheet()"></div>
+          <div class="sheet">
+            <div class="grab"></div>
+            <div class="row between" style="align-items:flex-start;">
+              <div><div class="kicker gold">Shop the Look</div><h2 class="h2" style="margin-top:6px;">Образ из видео</h2></div>
+              <button class="iconbtn" onclick="closeSheet()"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+            </div>
+            <div style="margin-top:16px;">
+              <div class="prow"><div class="ph ph-grey pimg"></div><div><h5>Glow Serum Vitamin C</h5><p>Сыворотка · 30 мл</p></div><div class="pp"><div class="price">3 190 ₽</div></div></div>
+              <div class="prow"><div class="ph ph-rose pimg"></div><div><h5>Hydra Cream Light</h5><p>Крем-гель · 50 мл</p></div><div class="pp"><div class="price">2 290 ₽</div></div></div>
+              <div class="prow"><div class="ph ph-gold pimg"></div><div><h5>SPF 50 Daily Fluid</h5><p>Флюид · 40 мл</p></div><div class="pp"><div class="price">1 990 ₽</div></div></div>
+            </div>
+            <div class="soft" style="padding:14px 16px;margin-top:8px;">
+              <div class="row between">
+                <div><div style="font-size:12px;color:var(--muted);">Комплект из 3 продуктов</div><div class="row gap8" style="margin-top:4px;align-items:baseline;"><span class="price" style="font-size:21px;">6 360 ₽</span><span class="strike">7 470 ₽</span></div></div>
+                <span class="badge" style="background:var(--gold);color:#231d12;">−15%</span>
+              </div>
+            </div>
+            <button class="btn btn-gold" style="margin-top:16px;" onclick="closeSheet();go('s-ugc2')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6L5 3H3"/></svg> Добавить всё в корзину</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 2c UGC CART ============ -->
+      <section class="screen" id="s-ugc2" data-home data-label="UGC · корзина">
+        <div class="topbar"><button class="iconbtn" onclick="back()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="title">Корзина</div><div style="width:40px;"></div></div>
+        <div class="scroll">
+          <div class="pad center" style="margin-top:18px;">
+            <div class="checkmark rise d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div>
+            <h2 class="h2 rise d2" style="margin-top:22px;">Комплект<br>в корзине</h2>
+            <p class="lead rise d2" style="margin-top:12px;">3 продукта из образа добавлены со скидкой 15%.</p>
+          </div>
+          <div class="pad rise d3" style="margin-top:22px;">
+            <div class="card" style="padding:6px 16px;">
+              <div class="prow"><div class="ph ph-grey pimg" style="width:46px;height:46px;"></div><div><h5>Glow Serum Vitamin C</h5><p>30 мл</p></div><div class="pp price">3 190 ₽</div></div>
+              <div class="prow"><div class="ph ph-rose pimg" style="width:46px;height:46px;"></div><div><h5>Hydra Cream Light</h5><p>50 мл</p></div><div class="pp price">2 290 ₽</div></div>
+              <div class="prow"><div class="ph ph-gold pimg" style="width:46px;height:46px;"></div><div><h5>SPF 50 Daily Fluid</h5><p>40 мл</p></div><div class="pp price">1 990 ₽</div></div>
+              <div class="divider"></div>
+              <div class="row between" style="padding-bottom:12px;"><span style="font-weight:600;">Итого со скидкой</span><span class="price" style="font-size:19px;">6 360 ₽</span></div>
+            </div>
+          </div>
+          <div class="pad rise d4" style="margin-top:18px;">
+            <div class="metric">
+              <div class="metric__label">Ожидаемый эффект</div>
+              <div class="metric__value">AOV <b>+10%</b> · Повторные покупки <b>+14%</b></div>
+            </div>
+          </div>
+        </div>
+        <footer class="actionbar">
+          <button class="btn btn-gold" onclick="go('s-hub')">Оформить заказ</button>
+          <button class="btn btn-ghost mt10" onclick="go('s-hub')">Вернуться в каталог</button>
+        </footer>
+      </section>
+
+      <!-- ============ 3a COLOR TEST INTRO ============ -->
+      <section class="screen" id="s-ct1" data-home data-label="Цветотип · старт">
+        <div class="topbar"><button class="iconbtn" onclick="back()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="title">Цветотип</div><div style="width:40px;"></div></div>
+        <div class="scroll">
+          <div class="pad center">
+            <div class="ph rise d1" style="height:230px;background:conic-gradient(from 200deg,#C98A78,#D8C39A,#9CA88F,#8FA9B0,#A8869B,#C98A78);"><span class="ph-label" style="color:rgba(0,0,0,.5);text-shadow:none;">Палитра · абстракция</span></div>
+          </div>
+          <div class="pad" style="margin-top:24px;">
+            <div class="kicker rise d2">Умный product discovery</div>
+            <h1 class="h1 rise d2" style="margin-top:10px;">Определите<br>свой цветотип<br>за 2 минуты</h1>
+            <p class="lead rise d3" style="margin-top:14px;">Загрузите селфи и ответьте на 7 вопросов. Мы определим ваш типаж из 12 сезонов и настроим каталог под вас.</p>
+            <div class="row gap14 rise d4" style="margin-top:22px;">
+              <div class="row gap8" style="font-size:12.5px;color:var(--muted);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> ~2 минуты</div>
+              <div class="row gap8" style="font-size:12.5px;color:var(--muted);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4-3 7-7 8-4-1-7-4-7-8V6z"/></svg> Фото не хранится</div>
+            </div>
+          </div>
+        </div>
+        <footer class="actionbar">
+          <button class="btn btn-gold" onclick="startQuiz()">Пройти тест</button>
+        </footer>
+      </section>
+
+      <!-- ============ 3b QUIZ ============ -->
+      <section class="screen" id="s-ct2" data-home data-label="Цветотип · квиз">
+        <div class="topbar"><button class="iconbtn" onclick="quizBack()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="title" id="ctStepLabel">Шаг 1 из 7</div><div style="width:40px;"></div></div>
+        <div class="pad" style="margin-top:2px;">
+          <div class="steps" id="ctSteps"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+        <div class="scroll">
+          <div class="pad" id="ctQCard" style="margin-top:24px;">
+            <div class="kicker" id="ctKicker">Подтон кожи</div>
+            <h1 class="h1" id="ctQuestion" style="margin-top:10px;font-size:25px;line-height:1.12;">Какой у вас подтон кожи?</h1>
+            <p class="lead" id="ctHint" style="margin-top:12px;">Посмотрите на вены на запястье при дневном свете.</p>
+            <div class="tiles" style="margin-top:24px;" id="quizTiles"></div>
+          </div>
+        </div>
+        <footer class="actionbar">
+          <button class="btn btn-dark" id="quizNext" style="opacity:.4;pointer-events:none;" onclick="quizNext()">Далее</button>
+        </footer>
+      </section>
+
+      <!-- ============ 3c RESULT ============ -->
+      <section class="screen" id="s-ct3" data-home data-label="Цветотип · результат">
+        <div class="topbar"><button class="iconbtn" onclick="back()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="title">Ваш результат</div><div style="width:40px;"></div></div>
+        <div class="scroll">
+          <div class="pad center" style="margin-top:14px;">
+            <div class="kicker rise d1">Ваш цветотип</div>
+            <h1 class="display rise d2" id="ctResultName" style="font-size:38px;margin-top:12px;line-height:1.05;">Мягкая Осень <span style="font-family:var(--font-u);font-size:30px;">🍂</span></h1>
+            <p class="lead rise d2" id="ctResultDesc" style="margin-top:14px;">Тёплый приглушённый подтон. Вам идут природные, дымчатые и землистые оттенки.</p>
+            <div class="row gap8 rise d2" style="justify-content:center;margin-top:14px;"><span class="badge" id="ctMatch" style="background:var(--gold);color:#231d12;">Совпадение 92%</span></div>
+          </div>
+          <div class="pad rise d3" style="margin-top:22px;">
+            <div class="kicker mb10">Ваши характеристики</div>
+            <div id="ctTraits" style="display:flex;flex-direction:column;gap:9px;"></div>
+          </div>
+          <div class="pad rise d4" style="margin-top:22px;">
+            <div class="row between mb10"><span class="kicker">Ваша палитра</span><span style="font-size:11.5px;color:var(--muted);">6 базовых тонов</span></div>
+            <div class="palette" id="ctPalette">
+              <i style="background:#C16A4E;"></i><i style="background:#A98850;"></i><i style="background:#7E8B5E;"></i><i style="background:#9C6B4A;"></i><i style="background:#5E7E7C;"></i><i style="background:#E5D3B0;"></i>
+            </div>
+          </div>
+          <div class="pad rise d4" style="margin-top:20px;">
+            <div class="soft row gap12" style="padding:14px 16px;align-items:center;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+              <div><div style="font-size:14px;font-weight:600;">Каталог настроен под вас</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Сохранено в CDP-профиль · 5 200 SKU отсортированы</div></div>
+            </div>
+          </div>
+          <div class="pad rise d5" style="margin-top:18px;">
+            <div class="metric">
+              <div class="metric__label">Ожидаемый эффект</div>
+              <div class="metric__value">CR новых пользователей <b>+15%</b> · D30 Retention <b>+18%</b></div>
+            </div>
+          </div>
+        </div>
+        <footer class="actionbar">
+          <button class="btn btn-gold" onclick="go('s-hub')">Смотреть мой каталог</button>
+        </footer>
+      </section>
+
+      <!-- ============ 4a SCANNER ENTRY ============ -->
+      <section class="screen" id="s-sc1" data-theme="dark" data-home data-label="Сканер · камера">
+        <div class="topbar"><button class="iconbtn" onclick="back()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="title">Сканер состава</div><div style="width:40px;"></div></div>
+        <div class="scroll" style="display:flex;flex-direction:column;">
+          <div class="pad center" style="margin-top:6px;">
+            <h1 class="h1" style="font-size:26px;">Узнайте, что<br>в составе</h1>
+            <p class="lead" style="color:rgba(255,255,255,.6);margin-top:12px;">Наведите камеру на этикетку — мы разберём INCI-состав за 4 секунды.</p>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:24px 0;">
+            <div class="viewfinder">
+              <div class="label-mock"></div>
+              <div class="vf-corner tl"></div><div class="vf-corner tr"></div><div class="vf-corner bl"></div><div class="vf-corner br"></div>
+              <div class="scanline"></div>
+            </div>
+            <p class="center" style="font-size:12px;color:rgba(255,255,255,.5);margin-top:18px;letter-spacing:.04em;">Наведите на этикетку</p>
+          </div>
+        </div>
+        <footer class="actionbar">
+          <button class="btn btn-gold" onclick="go('s-sc2')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M20 8V6a2 2 0 0 0-2-2h-2M4 16v2a2 2 0 0 0 2 2h2M20 16v2a2 2 0 0 1-2 2h-2M4 12h16"/></svg> Сканировать</button>
+        </footer>
+      </section>
+
+      <!-- ============ 4b SCAN RESULT ============ -->
+      <section class="screen" id="s-sc2" data-home data-label="Сканер · результат">
+        <div class="topbar"><button class="iconbtn" onclick="back()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="title">Анализ состава</div><div style="width:40px;"></div></div>
+        <div class="scroll">
+          <div class="pad center" style="margin-top:8px;">
+            <div class="kicker rise d1">Распознано · Glow Serum Vitamin C</div>
+            <div class="scorewrap rise d2" style="margin-top:18px;">
+              <svg width="154" height="154" viewBox="0 0 154 154">
+                <circle cx="77" cy="77" r="66" fill="none" stroke="rgba(10,10,10,.08)" stroke-width="11"/>
+                <circle id="scoreRing" cx="77" cy="77" r="66" fill="none" stroke="url(#sg)" stroke-width="11" stroke-linecap="round" stroke-dasharray="414.7" stroke-dashoffset="414.7"/>
+                <defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E6CF9E"/><stop offset="1" stop-color="#A9844A"/></linearGradient></defs>
+              </svg>
+              <div class="score-num"><b>8<span>/10</span></b><em>Безопасно</em></div>
+            </div>
+            <p class="lead rise d3" style="margin-top:16px;">Хороший состав. Учтены ваши аллергены из профиля.</p>
+          </div>
+          <div class="pad rise d4" style="margin-top:6px;">
+            <div class="chips" style="justify-content:center;gap:7px;">
+              <span class="badge green" style="font-size:10px;padding:4px 8px;">✓ Vegan</span>
+              <span class="badge green" style="font-size:10px;padding:4px 8px;">✓ Cruelty-free</span>
+              <span class="badge green" style="font-size:10px;padding:4px 8px;">✓ Без сульфатов</span>
+            </div>
+          </div>
+          <div class="pad rise d5" style="margin-top:24px;">
+            <div class="kicker mb6">Ингредиенты</div>
+            <div class="ing g"><div class="idot"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div><div style="flex:1;"><h5>Ascorbic Acid (Vitamin C)</h5><p>Антиоксидант · выравнивает тон</p></div></div>
+            <div class="ing g"><div class="idot"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div><div style="flex:1;"><h5>Hyaluronic Acid</h5><p>Увлажнение · безопасно</p></div></div>
+            <div class="ing y"><div class="idot">!</div><div style="flex:1;"><h5>Parfum (Fragrance)</h5><p>Возможный аллерген · следите за реакцией</p></div></div>
+            <div class="ing r"><div class="idot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></div><div style="flex:1;"><h5>Phenoxyethanol</h5><p>Консервант · нежелателен для чувствительной кожи</p></div></div>
+          </div>
+        </div>
+        <footer class="actionbar">
+          <button class="btn btn-dark" onclick="go('s-sc3')">Лучшие альтернативы в ЗЯ</button>
+        </footer>
+      </section>
+
+      <!-- ============ 4c ALTERNATIVES ============ -->
+      <section class="screen" id="s-sc3" data-home data-label="Сканер · альтернативы">
+        <div class="topbar"><button class="iconbtn" onclick="back()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="title">Альтернативы</div><div style="width:40px;"></div></div>
+        <div class="scroll">
+          <div class="pad" style="margin-top:6px;">
+            <div class="kicker rise d1">Чище по составу</div>
+            <h2 class="h2 rise d1" style="margin-top:8px;">Лучшие<br>альтернативы в ЗЯ</h2>
+            <p class="lead rise d2" style="margin-top:10px;">Подобраны под ваш профиль · с персональной скидкой.</p>
+          </div>
+          <div class="pad rise d3" style="margin-top:20px;display:flex;flex-direction:column;gap:12px;">
+            <div class="altcard"><div class="ph ph-grey aimg"></div><div style="flex:1;"><h5 style="font-size:14px;font-weight:600;">Pure C Serum 12%</h5><div class="row gap8 mt6"><span class="scoremini">●  9/10</span><span class="price" style="font-size:13.5px;">2 990 ₽</span></div></div><button class="btn btn-dark btn-sm">В корзину</button></div>
+            <div class="altcard"><div class="ph ph-rose aimg"></div><div style="flex:1;"><h5 style="font-size:14px;font-weight:600;">Clean Glow Booster</h5><div class="row gap8 mt6"><span class="scoremini">●  9/10</span><span class="price" style="font-size:13.5px;">3 490 ₽</span></div></div><button class="btn btn-dark btn-sm">В корзину</button></div>
+            <div class="altcard"><div class="ph ph-gold aimg"></div><div style="flex:1;"><h5 style="font-size:14px;font-weight:600;">Vitamin C Concentrate</h5><div class="row gap8 mt6"><span class="scoremini">●  10/10</span><span class="price" style="font-size:13.5px;">4 190 ₽</span></div></div><button class="btn btn-dark btn-sm">В корзину</button></div>
+          </div>
+          <div class="pad rise d4" style="margin-top:20px;">
+            <div class="metric">
+              <div class="metric__label">Ожидаемый эффект</div>
+              <div class="metric__value">Новая аудитория <b>+7%</b> · Сессии <b>+18%</b></div>
+            </div>
+          </div>
+        </div>
+        <footer class="actionbar">
+          <button class="btn btn-ghost" onclick="go('s-hub')">Вернуться в каталог</button>
+        </footer>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<div class="hint"><span>Кликайте по кнопкам, чтобы пройти сценарии</span><b>4 продуктовые гипотезы</b></div>
+
+<script>
+/* ---------- status bar + fab injection ---------- */
+const SB = '<div class="notch"></div><div class="statusbar"><span class="time">9:41</span><span class="icons"><svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg><svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><path d="M8 2.2c2.4 0 4.6.9 6.2 2.5l-1.3 1.3A6.6 6.6 0 0 0 8 4.1 6.6 6.6 0 0 0 3.1 6L1.8 4.7A8.8 8.8 0 0 1 8 2.2Z"/><path d="M8 6c1.3 0 2.5.5 3.4 1.4L8 10.8 4.6 7.4A4.8 4.8 0 0 1 8 6Z"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-opacity=".4"/><rect x="2.5" y="2.5" width="14" height="7" rx="1.5" fill="currentColor"/><path d="M23 4.5v3" stroke="currentColor" stroke-opacity=".5" stroke-width="1.6" stroke-linecap="round"/></svg></span></div>';
+const FAB = '<div class="fab-home" onclick="go(\'s-hub\')" title="На главную"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/></svg></div>';
+document.querySelectorAll('.screen').forEach(s=>{
+  s.insertAdjacentHTML('afterbegin', SB);
+  if(s.hasAttribute('data-home')) s.insertAdjacentHTML('beforeend', FAB);
+});
+
+/* ---------- navigation engine ---------- */
+const hist=[];
+let current='s-splash';
+let animating=false;
+function go(id, dir){
+  if(id===current||animating) return;
+  const cur=document.getElementById(current);
+  const next=document.getElementById(id);
+  if(!next) return;
+  const forward = dir!=='back';
+  if(forward) hist.push(current);
+  animating=true;
+  next.style.transition='none';
+  next.classList.add('active');
+  next.style.transform = forward?'translateX(100%)':'translateX(-100%)';
+  next.style.opacity='0';
+  void next.offsetWidth;
+  next.style.transition='';
+  next.style.transform='';
+  next.style.opacity='';
+  cur.classList.add(forward?'exit-left':'exit-right');
+  const sc=next.querySelector('.scroll'); if(sc) sc.scrollTop=0;
+  setTimeout(()=>{
+    cur.classList.remove('active','exit-left','exit-right');
+    cur.style.transform='';cur.style.opacity='';
+    animating=false;
+  },480);
+  current=id;
+  runEnter(next);
+}
+function back(){
+  if(hist.length) go(hist.pop(),'back');
+  else go('s-hub','back');
+}
+
+/* ---------- entrance animations ---------- */
+function runEnter(screen){
+  setTimeout(()=>{
+    screen.querySelectorAll('[data-fill]').forEach(el=>{ el.style.width=el.getAttribute('data-fill')+'%'; });
+    const ring=screen.querySelector('#scoreRing');
+    if(ring){ ring.style.transition='none'; ring.style.strokeDashoffset='414.7'; void ring.offsetWidth; ring.style.transition='stroke-dashoffset 1.3s cubic-bezier(.5,.05,.2,1)'; ring.style.strokeDashoffset=(414.7*0.2).toFixed(1); }
+  },120);
+}
+
+/* ---------- carousel ---------- */
+let cIndex=0;
+function carouselGo(i){
+  cIndex=Math.max(0,Math.min(2,i));
+  document.getElementById('ctrack').style.transform='translateX('+(-cIndex*100)+'%)';
+  document.querySelectorAll('#cdots i').forEach((d,k)=>d.classList.toggle('on',k===cIndex));
+  document.getElementById('cnext').textContent = cIndex===2?'Продолжить':'Далее';
+}
+function carouselNext(){ if(cIndex<2) carouselGo(cIndex+1); else go('s-cta'); }
+
+/* ---------- AR shade ---------- */
+function selectShade(el){
+  document.querySelectorAll('#arShades .shade').forEach(s=>s.classList.remove('on'));
+  el.classList.add('on');
+  const lip=document.getElementById('lipPath');
+  if(lip){ lip.style.transition='fill .25s'; lip.setAttribute('fill', el.dataset.c); }
+}
+
+/* ---------- UGC chips ---------- */
+function toggleChip(el){
+  el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+/* ---------- sheet ---------- */
+function openSheet(){ document.getElementById('shopSheet').classList.add('open'); }
+function closeSheet(){ document.getElementById('shopSheet').classList.remove('open'); }
+
+/* ---------- quiz ---------- */
+function selectTile(el){
+  el.parentElement.querySelectorAll('.tile').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  const btn=document.getElementById('quizNext');
+  btn.style.opacity='1'; btn.style.pointerEvents='auto';
+}
+
+/* ---------- COLOR-TYPE QUIZ (real, scored) ---------- */
+const CT_Q=[
+ {k:'Подтон кожи',q:'Какой у вас подтон кожи?',h:'Посмотрите на вены на запястье при дневном свете.',o:[
+   {t:'Тёплый',d:'Вены зеленоватые · золото к лицу',c:'linear-gradient(135deg,#F0C9A0,#D89B6A)',s:{warm:2}},
+   {t:'Холодный',d:'Вены синеватые · серебро к лицу',c:'linear-gradient(135deg,#E8C4C0,#C98AA0)',s:{cool:2}},
+   {t:'Нейтральный',d:'Сложно сказать · подходит и то, и то',c:'linear-gradient(135deg,#E8D2B5,#C2A989)',s:{warm:1,cool:1}}]},
+ {k:'Реакция на солнце',q:'Как кожа реагирует на солнце?',h:'Вспомните, как вы загораете летом.',o:[
+   {t:'Легко, золотистый загар',d:'Почти не сгораю',c:'linear-gradient(135deg,#E8B074,#B5793C)',s:{warm:2,deep:1}},
+   {t:'Краснею и сгораю',d:'Загар ложится плохо',c:'linear-gradient(135deg,#F2C4C0,#E89A94)',s:{cool:2,light:1}},
+   {t:'Ровный загар без ожогов',d:'Загораю постепенно',c:'linear-gradient(135deg,#D8B48C,#A8835C)',s:{warm:1,deep:1}}]},
+ {k:'Цвет глаз',q:'Какой цвет глаз ближе к вашему?',h:'Натуральный цвет при дневном свете.',o:[
+   {t:'Тёплые — карие, зелёные',d:'С золотистыми вкраплениями',c:'linear-gradient(135deg,#9C7A3E,#5E4A24)',s:{warm:2,soft:1}},
+   {t:'Холодные — голубые, серые',d:'С прохладным оттенком',c:'linear-gradient(135deg,#9CB6C8,#6E8CA8)',s:{cool:2}},
+   {t:'Яркие и контрастные',d:'Чёткая граница радужки',c:'linear-gradient(135deg,#3E6E9C,#1E3E5E)',s:{bright:2}}]},
+ {k:'Цвет волос',q:'Ваш натуральный цвет волос?',h:'Без окрашивания.',o:[
+   {t:'Тёплый — рыжий, каштан',d:'Тёплые блики',c:'linear-gradient(135deg,#B5743C,#7A4A22)',s:{warm:2}},
+   {t:'Холодный — пепельный',d:'Холодные блики',c:'linear-gradient(135deg,#8A8276,#544E46)',s:{cool:2}},
+   {t:'Светлый — блонд',d:'Светлые волосы',c:'linear-gradient(135deg,#E8D6A8,#CDBA82)',s:{light:2}},
+   {t:'Тёмный — шоколад',d:'Глубокий тёмный',c:'linear-gradient(135deg,#3A2A22,#15100C)',s:{deep:2}}]},
+ {k:'Контраст',q:'Насколько контрастна внешность?',h:'Сравните цвет волос, кожи и глаз.',o:[
+   {t:'Высокий контраст',d:'Тёмные волосы, светлая кожа',c:'linear-gradient(135deg,#F2EDE6 50%,#1E1A16 50%)',s:{bright:2,deep:1}},
+   {t:'Мягкий, размытый',d:'Всё близко по тону',c:'linear-gradient(135deg,#D8CFC2,#B5A892)',s:{soft:2,light:1}},
+   {t:'Средний',d:'Умеренная разница',c:'linear-gradient(135deg,#C8B6A0 50%,#6E5E4A 50%)',s:{soft:1}}]},
+ {k:'Украшения',q:'Какой металл вам к лицу?',h:'В каком украшении кожа выглядит свежее.',o:[
+   {t:'Золото',d:'Тёплый блеск',c:'linear-gradient(135deg,#E6CF9E,#C9A96E)',s:{warm:2}},
+   {t:'Серебро',d:'Холодный блеск',c:'linear-gradient(135deg,#DCE0E6,#A8B0BA)',s:{cool:2}},
+   {t:'Оба подходят',d:'Одинаково хорошо',c:'linear-gradient(135deg,#E6CF9E 50%,#C0C6CE 50%)',s:{warm:1,cool:1}}]},
+ {k:'Любимые цвета',q:'Какие цвета вас оживляют?',h:'В какой одежде вам делают комплименты.',o:[
+   {t:'Тёплые землистые',d:'Терракота, олива, горчица',c:'linear-gradient(135deg,#C16A4E,#7E8B5E)',s:{warm:1,soft:2}},
+   {t:'Чистые яркие',d:'Фуксия, изумруд, кобальт',c:'linear-gradient(135deg,#C81E7E,#1E8AE0)',s:{bright:2,cool:1}},
+   {t:'Нежные пастельные',d:'Пудра, лаванда, мята',c:'linear-gradient(135deg,#F0C6D2,#C2E3D4)',s:{light:2,soft:1}},
+   {t:'Глубокие насыщенные',d:'Бордо, индиго, изумруд',c:'linear-gradient(135deg,#5E1E2A,#1E2E5A)',s:{deep:2}}]}
+];
+const CT_TYPES={
+ springLight:{n:'Светлая Весна',e:'🌸',d:'Тёплый светлый подтон. Вам идут нежные тёплые и светящиеся оттенки.',p:['#FFB7A0','#FFD9A0','#FBE8B0','#BFE3C0','#BFD8F0','#FFF2DD']},
+ springWarm:{n:'Тёплая Весна',e:'🌷',d:'Чистый тёплый подтон. Вам идут сочные золотисто-тёплые цвета.',p:['#FF8A5B','#FFC24B','#7FBF6A','#3FC1B0','#FFE7B0','#E8543A']},
+ springBright:{n:'Яркая Весна',e:'✨',d:'Тёплый яркий подтон с контрастом. Вам идут чистые звонкие цвета.',p:['#FF6F61','#FF8FB0','#A6D853','#34C6C6','#FFD23F','#3FA0FF']},
+ summerLight:{n:'Светлое Лето',e:'🌤',d:'Холодный светлый подтон. Вам идут прохладные пастельные оттенки.',p:['#BFD4E6','#F0C6D2','#D6C6E6','#C2E3D4','#DCDEE6','#A9C0DE']},
+ summerCool:{n:'Холодное Лето',e:'💧',d:'Чистый холодный подтон средней светлоты. Вам идут прохладные мягкие цвета.',p:['#6E9BC7','#D98BA8','#B85C8E','#4FA3A0','#8FA0BE','#8E5E86']},
+ summerSoft:{n:'Мягкое Лето',e:'🌫',d:'Холодный приглушённый подтон. Вам идут дымчатые припылённые оттенки.',p:['#C39BA0','#9CAE9C','#A88FA0','#7E94AE','#B7AC9E','#8A7488']},
+ autumnSoft:{n:'Мягкая Осень',e:'🍂',d:'Тёплый приглушённый подтон. Вам идут природные, дымчатые и землистые оттенки.',p:['#C16A4E','#A98850','#7E8B5E','#9C6B4A','#5E7E7C','#E5D3B0']},
+ autumnWarm:{n:'Тёплая Осень',e:'🍁',d:'Чистый тёплый подтон. Вам идут насыщенные пряные и золотистые цвета.',p:['#C8612E','#C89A3A','#5E7A3E','#A8492C','#2E7A6E','#C8A06A']},
+ autumnDeep:{n:'Тёмная Осень',e:'🌰',d:'Тёплый глубокий подтон. Вам идут богатые тёмные и пряные оттенки.',p:['#8A3B22','#9A7A2E','#3E5A2E','#5E2E2A','#1E5A52','#4A2E22']},
+ winterDeep:{n:'Тёмная Зима',e:'❄️',d:'Холодный глубокий подтон с контрастом. Вам идут тёмные насыщенные цвета.',p:['#1E1E2A','#8A1F35','#1E4A3A','#1E2E5A','#A01E6E','#EDEFF5']},
+ winterCool:{n:'Холодная Зима',e:'🔷',d:'Чистый холодный подтон. Вам идут яркие прохладные и ясные цвета.',p:['#1E5AA0','#C81E7E','#1E8A5A','#C81E3A','#5A1E9A','#F2F4FA']},
+ winterBright:{n:'Яркая Зима',e:'💎',d:'Холодный яркий подтон с высоким контрастом. Вам идут ледяные и электрические цвета.',p:['#FF1E8E','#1E8AE0','#00A86B','#E51E3A','#7A1EE0','#EAF0FF']}
+};
+let CT={i:0,sel:null,ans:[]};
+function startQuiz(){ CT={i:0,sel:null,ans:[]}; renderQuestion(); go('s-ct2'); }
+function renderQuestion(){
+  const Q=CT_Q[CT.i];
+  document.getElementById('ctStepLabel').textContent='Шаг '+(CT.i+1)+' из 7';
+  document.getElementById('ctKicker').textContent=Q.k;
+  document.getElementById('ctQuestion').textContent=Q.q;
+  document.getElementById('ctHint').textContent=Q.h;
+  document.querySelectorAll('#ctSteps i').forEach((s,k)=>{ s.className=''; if(k<CT.i)s.classList.add('done'); else if(k===CT.i)s.classList.add('cur'); });
+  const prev=(CT.ans[CT.i]!=null)?CT.ans[CT.i]:null;
+  CT.sel=prev;
+  document.getElementById('quizTiles').innerHTML=Q.o.map((o,idx)=>(
+    '<div class="tile'+(prev===idx?' on':'')+'" onclick="selectQuizTile('+idx+')">'+
+      '<div class="tsw" style="background:'+o.c+';"></div>'+
+      '<div><h5>'+o.t+'</h5>'+(o.d?'<p>'+o.d+'</p>':'')+'</div>'+
+      '<div class="tck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div>'+
+    '</div>'
+  )).join('');
+  const card=document.getElementById('ctQCard'); card.classList.remove('qin'); void card.offsetWidth; card.classList.add('qin');
+  document.getElementById('quizNext').textContent = CT.i===6?'Узнать результат':'Далее';
+  setNextEnabled(prev!=null);
+  const sc=document.querySelector('#s-ct2 .scroll'); if(sc)sc.scrollTop=0;
+}
+function setNextEnabled(on){ const b=document.getElementById('quizNext'); b.style.opacity=on?'1':'.4'; b.style.pointerEvents=on?'auto':'none'; }
+function selectQuizTile(idx){ CT.sel=idx; document.querySelectorAll('#quizTiles .tile').forEach((t,k)=>t.classList.toggle('on',k===idx)); setNextEnabled(true); }
+function quizNext(){
+  if(CT.sel==null) return;
+  CT.ans[CT.i]=CT.sel;
+  if(CT.i<6){ CT.i++; renderQuestion(); }
+  else { renderResult(); go('s-ct3'); }
+}
+function quizBack(){ if(CT.i>0){ CT.i--; renderQuestion(); } else back(); }
+function computeType(){
+  const sc={warm:0,cool:0,light:0,deep:0,bright:0,soft:0};
+  CT.ans.forEach((a,i)=>{ const s=CT_Q[i].o[a].s; for(const k in s) sc[k]+=s[k]; });
+  // three colorimetry axes
+  const temp = sc.warm - sc.cool;     // + warm / - cool
+  const value = sc.light - sc.deep;   // + light / - deep
+  const chroma = sc.bright - sc.soft; // + bright / - soft
+  let season, key;
+  if(temp>0){ // WARM → Spring or Autumn
+    if(value + chroma >= 0){ season='spring'; key = value>chroma?'springLight':(chroma>value?'springBright':'springWarm'); }
+    else { season='autumn'; key = (-chroma)>(-value)?'autumnSoft':((-value)>(-chroma)?'autumnDeep':'autumnWarm'); }
+  } else if(temp<0){ // COOL → Summer or Winter
+    if(value - chroma >= 0){ season='summer'; key = value>(-chroma)?'summerLight':((-chroma)>value?'summerSoft':'summerCool'); }
+    else { season='winter'; key = (-value)>chroma?'winterDeep':(chroma>(-value)?'winterBright':'winterCool'); }
+  } else { // NEUTRAL temp → decide by chroma+value
+    if(chroma>=0){ season = value>=0?'spring':'winter'; key = value>=0?'springBright':'winterBright'; }
+    else { season = value>=0?'summer':'autumn'; key = value>=0?'summerSoft':'autumnSoft'; }
+  }
+  // match %: how dominant the winning signals are (max 14 axis-points across 7 q)
+  const strength = Math.abs(temp) + Math.abs(value) + Math.abs(chroma);
+  const match = Math.round(78 + Math.min(strength,14)/14*20); // 78–98%
+  const traits=[
+    {l:'Подтон', v: temp>0?'Тёплый':(temp<0?'Холодный':'Нейтральный'), pct: pctOf(sc.warm,sc.cool)},
+    {l:'Светлота', v: value>0?'Светлый':(value<0?'Глубокий':'Средний'), pct: pctOf(sc.light,sc.deep)},
+    {l:'Насыщенность', v: chroma>0?'Яркий':(chroma<0?'Мягкий':'Сбалансированный'), pct: pctOf(sc.bright,sc.soft)}
+  ];
+  return Object.assign({}, CT_TYPES[key], {match, traits});
+}
+function pctOf(a,b){ const t=a+b; return t===0?50:Math.round(Math.max(a,b)/t*100); }
+function renderResult(){
+  const T=computeType();
+  document.getElementById('ctResultName').innerHTML = T.n+' <span style="font-family:var(--font-u);font-size:30px;">'+T.e+'</span>';
+  document.getElementById('ctResultDesc').textContent = T.d;
+  document.getElementById('ctMatch').textContent = 'Совпадение '+T.match+'%';
+  document.getElementById('ctPalette').innerHTML = T.p.map(c=>'<i style="background:'+c+';"></i>').join('');
+  document.getElementById('ctTraits').innerHTML = T.traits.map(tr=>(
+    '<div class="row gap12" style="align-items:center;">'+
+      '<span style="font-size:12px;font-weight:600;color:var(--muted);width:104px;flex:0 0 auto;">'+tr.l+'</span>'+
+      '<span style="font-size:13.5px;font-weight:700;width:118px;flex:0 0 auto;">'+tr.v+'</span>'+
+      '<span style="flex:1;height:6px;border-radius:6px;background:rgba(10,10,10,.08);overflow:hidden;"><i style="display:block;height:100%;width:'+tr.pct+'%;background:linear-gradient(90deg,#C9A96E,#E6CF9E);border-radius:6px;"></i></span>'+
+    '</div>'
+  )).join('');
+}
+
+/* ---------- fit to viewport ---------- */
+function fit(){
+  const s=Math.min(1,(window.innerHeight-28)/812,(window.innerWidth-20)/375);
+  document.getElementById('stage').style.transform='scale('+s+')';
+}
+window.addEventListener('resize',fit); fit();
+runEnter(document.getElementById('s-splash'));
+renderQuestion();
+</script>
+</body>
+</html>
